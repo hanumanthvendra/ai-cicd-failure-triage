@@ -1,0 +1,27 @@
+A Jenkins job goes red. The useful answer is rarely “the build failed.” It’s which log line, which test, and which line in the PR actually did it.
+
+I built a CI/CD Failure Triage assistant that reads three artifacts from a failed Jenkins run — the console log, JUnit results, and the git diff vs last green — then names the likely cause, cites the evidence, and drafts a patch. A human applies it and retriggers Jenkins. The assistant never changes git and never rebuilds on its own.
+
+It sits next to my GitOps Release Guardian: one reviews changes BEFORE merge. This one diagnoses failures DURING CI.
+
+The demo job, checkout/PR-47:
+
+1️⃣ Dockerfile COPY reqirements.txt — file not in the build context
+Console points at Dockerfile:3. JUnit test_image_builds fails. The PR diff is the typo (requirements.txt → reqirements.txt).
+
+2️⃣ kubeconform: spec.replicas expected integer, got “three”
+JUnit test_kubeconform_checkout fails. The PR changed replicas: 3 to replicas: three.
+
+The assistant drafts one patch: restore COPY requirements.txt and replicas: 3. Apply it to a copy, re-run the local stand-in for those two stages → PASS.
+
+The LLM only narrates. Detectors own the causes. Same findings with a mock (no API key, CI-safe) or Claude.
+
+After ~10 years in production: the expensive part of a red pipeline isn’t the scanner. It’s the 20 minutes stitching log + tests + diff. Put that stitch in the platform. Keep the retry button on a human.
+
+Runnable on a laptop. No Jenkins controller required for the demo:
+
+make test && make demo
+
+Repo + motion diagram 👇 in the comments.
+
+#Jenkins #CICD #DevOps #Kubernetes #Docker #PlatformEngineering #SRE #AI #GitOps #DevSecOps

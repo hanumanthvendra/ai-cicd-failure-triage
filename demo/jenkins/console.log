@@ -1,0 +1,39 @@
+Started by user venkatavendra
+Checking out git https://github.com/hanumanthvendra/ai-cicd-failure-triage.git into /var/jenkins_home/workspace/checkout/PR-47
+ > git rev-parse PR-47^{commit} # timeout=10
+Commit message: "ship checkout image + bump replicas for load test"
+[Pipeline] { (Build image)
++ docker build -t ghcr.io/example/checkout:pr-47 .
+#0 building with "default" instance using docker driver
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 287B done
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#3 [1/4] FROM docker.io/library/python:3.12-slim
+#3 CACHED
+#4 [internal] load build context
+#4 transferring context: 1.12kB done
+#5 [2/4] WORKDIR /app
+#5 CACHED
+#6 [3/4] COPY reqirements.txt .
+#6 ERROR: failed to calculate checksum of ref: "/reqirements.txt": not found
+------
+ > [3/4] COPY reqirements.txt .:
+------
+Dockerfile:3
+--------------------
+   1 |     FROM python:3.12-slim
+   2 |     WORKDIR /app
+   3 | >>> COPY reqirements.txt .
+   4 |     RUN pip install --no-cache-dir -r requirements.txt
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref: "/reqirements.txt": not found
+[Pipeline] { (Validate manifests)
++ kubeconform -strict -summary k8s/deployment.yaml
+k8s/deployment.yaml: ERROR - spec.replicas: expected integer, got string "three"
+Summary: 1 resource found parsing k8s/deployment.yaml - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+[Pipeline] { (Unit tests)
++ python -m pytest tests --junitxml=junit.xml
+[Pipeline] }
+ERROR: script returned exit code 1
+Finished: FAILURE

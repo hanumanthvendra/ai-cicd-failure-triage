@@ -1,0 +1,47 @@
+pipeline {
+  agent any
+  options { timestamps(); ansiColor('xterm') }
+  stages {
+    stage('Build image') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+          sh 'docker build -t ghcr.io/example/checkout:${BUILD_NUMBER} .'
+        }
+      }
+    }
+    stage('Validate manifests') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+          sh 'kubeconform -strict -summary k8s/deployment.yaml'
+        }
+      }
+    }
+    stage('Unit tests') {
+      steps {
+        sh 'python3 -m pytest tests --junitxml=junit.xml'
+      }
+      post {
+        always { junit allowEmptyResults: true, testResults: 'junit.xml' }
+      }
+    }
+    stage('Triage (read-only)') {
+      when { expression { currentBuild.currentResult == 'FAILURE' || currentBuild.result == 'FAILURE' } }
+      steps {
+        sh '''
+          python3 -m triage diagnose \
+            --console "${BUILD_LOG:-demo/jenkins/console.log}" \
+            --junit junit.xml \
+            --diff <(git diff origin/main...HEAD) \
+            --workspace . \
+            --out triage-out
+        '''
+        archiveArtifacts artifacts: 'triage-out/triage.md,triage-out/suggested.patch', fingerprint: true
+      }
+    }
+  }
+  post {
+    failure {
+      echo 'Triage is advisory. A human applies the patch and retriggers this job. The assistant does not rebuild or deploy.'
+    }
+  }
+}

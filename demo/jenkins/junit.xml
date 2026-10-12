@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ci" tests="3" failures="2" errors="0" skipped="0">
+  <testcase classname="ci.policy" name="test_no_latest_tag" time="0.01"/>
+  <testcase classname="ci.docker" name="test_image_builds" time="4.21">
+    <failure message="docker build exited 1: COPY reqirements.txt not found in build context">COPY failed at Dockerfile:3
+file not found: reqirements.txt
+</failure>
+  </testcase>
+  <testcase classname="ci.k8s" name="test_kubeconform_checkout" time="0.08">
+    <failure message="kubeconform: spec.replicas expected integer, got string">k8s/deployment.yaml: ERROR - spec.replicas: expected integer, got string "three"
+</failure>
+  </testcase>
+</testsuite>
